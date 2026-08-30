@@ -13,7 +13,8 @@ from pydantic import BaseModel, Field
 
 from ai.prompts import REVIEW_PARSE_PROMPT
 from config import settings
-from models.enums import SectionType
+from models.enums import CallType, GenerationStatus, SectionType
+from services.metrics import record_generation_event
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +116,9 @@ def parse_gdd_content(raw_content: str) -> dict[SectionType, str]:
                 MAX_PARSE_ATTEMPTS,
                 latency,
             )
+            record_generation_event(
+                CallType.REVIEW_PARSE, GenerationStatus.RATE_LIMITED, latency
+            )
             raise RateLimitError(
                 "Gemini free-tier rate limit reached. Wait a bit before "
                 "retrying, or check your quota at "
@@ -128,6 +132,12 @@ def parse_gdd_content(raw_content: str) -> dict[SectionType, str]:
                 MAX_PARSE_ATTEMPTS,
                 latency,
                 str(err),
+            )
+            record_generation_event(
+                CallType.REVIEW_PARSE,
+                GenerationStatus.ERROR,
+                latency,
+                error_message=str(err),
             )
             raise ReviewParsingError(f"Gemini request failed: {err}") from err
 
@@ -154,6 +164,12 @@ def parse_gdd_content(raw_content: str) -> dict[SectionType, str]:
             "ok" if populated else "invalid",
             latency,
             populated,
+        )
+        record_generation_event(
+            CallType.REVIEW_PARSE,
+            GenerationStatus.OK if populated else GenerationStatus.INVALID,
+            latency,
+            error_message=None if populated else "no content was mapped to any section",
         )
 
         if populated > 0:

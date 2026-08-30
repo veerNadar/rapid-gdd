@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
-from routers import projects, reviews, sections
+from routers import metrics, projects, reviews, sections
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,6 +25,7 @@ app.include_router(projects.router)
 app.include_router(sections.router)
 app.include_router(sections.generation_router)
 app.include_router(reviews.router)
+app.include_router(metrics.router)
 
 
 @app.get("/health")

@@ -7,6 +7,7 @@
 import type {
   FeedbackStatus,
   GDDSection,
+  MetricsSummary,
   Project,
   ProjectCreateInput,
   ProjectWithSections,
@@ -185,6 +186,13 @@ export function promoteReview(reviewId: string, title?: string): Promise<Project
     method: 'POST',
     body: JSON.stringify({ title: title || undefined }),
   })
+}
+
+/** Aggregate Gemini call stats: success/failure rate and average
+ * latency per call type and section type, token usage totals, and
+ * today's volume against the free-tier daily request limit. */
+export function getMetrics(): Promise<MetricsSummary> {
+  return request<MetricsSummary>('/metrics/')
 }
 
 export { ApiError }

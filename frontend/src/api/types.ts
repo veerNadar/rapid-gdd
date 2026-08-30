@@ -91,3 +91,35 @@ export interface ProjectWithSections {
   project: Project
   sections: GDDSection[]
 }
+
+export type CallType = 'section_generation' | 'review_parse' | 'critique'
+
+export interface CallTypeStats {
+  call_type: CallType
+  total_calls: number
+  successful: number
+  failed: number
+  success_rate: number
+  avg_latency_ms: number | null
+}
+
+export interface SectionTypeStats {
+  section_type: SectionType
+  total_calls: number
+  successful: number
+  failed: number
+  success_rate: number
+  avg_latency_ms: number | null
+}
+
+export interface MetricsSummary {
+  total_calls: number
+  total_tokens_in: number
+  total_tokens_out: number
+  total_tokens_total: number
+  calls_today: number
+  free_tier_daily_limit: number
+  free_tier_usage_pct: number | null
+  by_call_type: CallTypeStats[]
+  by_section_type: SectionTypeStats[]
+}

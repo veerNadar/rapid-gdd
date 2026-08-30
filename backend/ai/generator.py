@@ -13,7 +13,8 @@ from ai.context import format_context, intake_variables
 from ai.prompts import SECTION_PROMPTS
 from config import settings
 from models import Project
-from models.enums import SectionType
+from models.enums import CallType, GenerationStatus, SectionType
+from services.metrics import record_generation_event
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +136,12 @@ def generate_section(
                 MAX_GENERATION_ATTEMPTS,
                 latency,
             )
+            record_generation_event(
+                CallType.SECTION_GENERATION,
+                GenerationStatus.RATE_LIMITED,
+                latency,
+                section_type=section_type,
+            )
             raise RateLimitError(
                 "Gemini free-tier rate limit reached. Wait a bit before "
                 "retrying, or check your quota at "
@@ -150,6 +157,13 @@ def generate_section(
                 MAX_GENERATION_ATTEMPTS,
                 latency,
                 str(err),
+            )
+            record_generation_event(
+                CallType.SECTION_GENERATION,
+                GenerationStatus.ERROR,
+                latency,
+                section_type=section_type,
+                error_message=str(err),
             )
             raise SectionGenerationError(f"Gemini request failed: {err}") from err
 
@@ -180,6 +194,16 @@ def generate_section(
             tokens_out,
             tokens_total,
             f" reason={issue!r}" if issue else "",
+        )
+        record_generation_event(
+            CallType.SECTION_GENERATION,
+            GenerationStatus.OK if issue is None else GenerationStatus.INVALID,
+            latency,
+            section_type=section_type,
+            tokens_in=tokens_in,
+            tokens_out=tokens_out,
+            tokens_total=tokens_total,
+            error_message=issue,
         )
 
         if issue is None:

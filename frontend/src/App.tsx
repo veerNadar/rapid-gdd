@@ -1,5 +1,6 @@
 import { Link, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
+import Metrics from './pages/Metrics'
 import ProjectView from './pages/ProjectView'
 import ReviewResults from './pages/ReviewResults'
 import ReviewUpload from './pages/ReviewUpload'
@@ -15,6 +16,9 @@ export default function App() {
           <Link to="/" className="text-sm text-slate-500 hover:text-slate-900">
             New Project
           </Link>
+          <Link to="/admin/metrics" className="text-sm text-slate-500 hover:text-slate-900">
+            Metrics
+          </Link>
         </nav>
       </header>
 
@@ -26,6 +30,7 @@ export default function App() {
           path="/projects/:projectId/reviews/:reviewId"
           element={<ReviewResults />}
         />
+        <Route path="/admin/metrics" element={<Metrics />} />
       </Routes>
     </div>
   )

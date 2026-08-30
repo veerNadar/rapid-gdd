@@ -1,4 +1,5 @@
 from .gdd_section import GDDSectionBase, GDDSectionCreate, GDDSectionRead, GDDSectionUpdate
+from .metrics import CallTypeStats, MetricsSummary, SectionTypeStats
 from .project import (
     IntakeData,
     ProjectBase,
@@ -43,4 +44,7 @@ __all__ = [
     "ReviewSectionFeedbackCreate",
     "ReviewSectionFeedbackUpdate",
     "ReviewSectionFeedbackRead",
+    "MetricsSummary",
+    "CallTypeStats",
+    "SectionTypeStats",
 ]

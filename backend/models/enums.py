@@ -28,3 +28,20 @@ class FeedbackStatus(str, enum.Enum):
     ACCEPTED = "accepted"
     REJECTED = "rejected"
     EDITED = "edited"
+
+
+class CallType(str, enum.Enum):
+    """Which kind of Gemini call a `GenerationMetric` row is for."""
+
+    SECTION_GENERATION = "section_generation"
+    REVIEW_PARSE = "review_parse"
+    CRITIQUE = "critique"
+
+
+class GenerationStatus(str, enum.Enum):
+    """Outcome of a single Gemini call attempt, for metrics."""
+
+    OK = "ok"
+    INVALID = "invalid"
+    RATE_LIMITED = "rate_limited"
+    ERROR = "error"

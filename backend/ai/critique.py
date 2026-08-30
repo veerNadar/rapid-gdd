@@ -15,7 +15,8 @@ from ai.context import format_context, intake_variables
 from ai.prompts import CRITIQUE_PROMPT, SECTION_LABELS
 from config import settings
 from models import Project
-from models.enums import SectionType
+from models.enums import CallType, GenerationStatus, SectionType
+from services.metrics import record_generation_event
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,12 @@ def critique_section(
                 MAX_CRITIQUE_ATTEMPTS,
                 latency,
             )
+            record_generation_event(
+                CallType.CRITIQUE,
+                GenerationStatus.RATE_LIMITED,
+                latency,
+                section_type=section_type,
+            )
             raise RateLimitError(
                 "Gemini free-tier rate limit reached. Wait a bit before "
                 "retrying, or check your quota at "
@@ -132,6 +139,13 @@ def critique_section(
                 MAX_CRITIQUE_ATTEMPTS,
                 latency,
                 str(err),
+            )
+            record_generation_event(
+                CallType.CRITIQUE,
+                GenerationStatus.ERROR,
+                latency,
+                section_type=section_type,
+                error_message=str(err),
             )
             raise CritiqueError(f"Gemini request failed: {err}") from err
 
@@ -149,6 +163,13 @@ def critique_section(
             "ok" if issue is None else "invalid",
             latency,
             f" reason={issue!r}" if issue else "",
+        )
+        record_generation_event(
+            CallType.CRITIQUE,
+            GenerationStatus.OK if issue is None else GenerationStatus.INVALID,
+            latency,
+            section_type=section_type,
+            error_message=issue,
         )
 
         if issue is None:

@@ -17,8 +17,15 @@ from ai.review_parser import (
 )
 from database import get_db
 from models import Project, Review, ReviewSectionFeedback
-from models.enums import ReviewSource
-from schemas import ReviewSectionFeedbackUpdate, ReviewWithFeedback, ReviewWithSections
+from models.enums import FeedbackStatus, ReviewSource
+from schemas import (
+    ProjectWithSections,
+    PromoteReviewRequest,
+    ReviewSectionFeedbackRead,
+    ReviewSectionFeedbackUpdate,
+    ReviewWithFeedback,
+    ReviewWithSections,
+)
 from services.gdd_sections import persist_section
 from services.review_feedback import persist_feedback
 
@@ -171,10 +178,82 @@ def list_review_feedback(review_id: uuid.UUID, db: Session = Depends(get_db)):
     raise NotImplementedError
 
 
-@router.patch("/feedback/{feedback_id}")
+@router.post(
+    "/{review_id}/promote",
+    response_model=ProjectWithSections,
+    status_code=201,
+)
+def promote_review(
+    review_id: uuid.UUID,
+    payload: PromoteReviewRequest,
+    db: Session = Depends(get_db),
+):
+    """Create a new project seeded with this review's accepted/edited
+    sections (using each one's final suggested rewrite). Sections that
+    are still pending or were rejected are left out — the new project
+    starts with only the improvements the user signed off on, and any
+    gaps can be filled in later from ProjectView."""
+    review = db.get(Review, review_id)
+    if review is None:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    original_project = db.get(Project, review.project_id)
+    if original_project is None:
+        raise HTTPException(status_code=404, detail="Original project not found")
+
+    accepted_feedback = (
+        db.query(ReviewSectionFeedback)
+        .filter(
+            ReviewSectionFeedback.review_id == review_id,
+            ReviewSectionFeedback.status.in_(
+                [FeedbackStatus.ACCEPTED, FeedbackStatus.EDITED]
+            ),
+        )
+        .all()
+    )
+    if not accepted_feedback:
+        raise HTTPException(
+            status_code=400,
+            detail="No accepted or edited sections to promote yet",
+        )
+
+    new_project = Project(
+        title=payload.title or f"{original_project.title} (Reviewed)",
+        # Carry over the original intake so generating any remaining
+        # sections later stays consistent with this project's premise.
+        intake_data=original_project.intake_data,
+    )
+    db.add(new_project)
+    db.commit()
+    db.refresh(new_project)
+
+    saved_sections = [
+        persist_section(db, new_project.id, feedback.section_type, feedback.suggested_rewrite)
+        for feedback in accepted_feedback
+        if feedback.suggested_rewrite
+    ]
+
+    return ProjectWithSections(project=new_project, sections=saved_sections)
+
+
+@router.patch("/feedback/{feedback_id}", response_model=ReviewSectionFeedbackRead)
 def update_review_feedback(
     feedback_id: uuid.UUID,
     payload: ReviewSectionFeedbackUpdate,
     db: Session = Depends(get_db),
 ):
-    raise NotImplementedError
+    """Accept, reject, or edit one piece of section feedback. Editing is
+    just a status of "edited" plus an updated `suggested_rewrite` — the
+    same row and endpoint the Accept/Reject actions use."""
+    feedback = db.get(ReviewSectionFeedback, feedback_id)
+    if feedback is None:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+
+    if payload.status is not None:
+        feedback.status = payload.status
+    if payload.suggested_rewrite is not None:
+        feedback.suggested_rewrite = payload.suggested_rewrite
+
+    db.commit()
+    db.refresh(feedback)
+    return feedback

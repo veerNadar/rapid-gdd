@@ -1,6 +1,20 @@
 from .gdd_section import GDDSectionBase, GDDSectionCreate, GDDSectionRead, GDDSectionUpdate
-from .project import IntakeData, ProjectBase, ProjectCreate, ProjectRead, ProjectUpdate
-from .review import ReviewBase, ReviewCreate, ReviewRead, ReviewWithFeedback, ReviewWithSections
+from .project import (
+    IntakeData,
+    ProjectBase,
+    ProjectCreate,
+    ProjectRead,
+    ProjectUpdate,
+    ProjectWithSections,
+)
+from .review import (
+    PromoteReviewRequest,
+    ReviewBase,
+    ReviewCreate,
+    ReviewRead,
+    ReviewWithFeedback,
+    ReviewWithSections,
+)
 from .review_section_feedback import (
     ReviewSectionFeedbackBase,
     ReviewSectionFeedbackCreate,
@@ -14,6 +28,7 @@ __all__ = [
     "ProjectCreate",
     "ProjectUpdate",
     "ProjectRead",
+    "ProjectWithSections",
     "GDDSectionBase",
     "GDDSectionCreate",
     "GDDSectionUpdate",
@@ -23,6 +38,7 @@ __all__ = [
     "ReviewRead",
     "ReviewWithSections",
     "ReviewWithFeedback",
+    "PromoteReviewRequest",
     "ReviewSectionFeedbackBase",
     "ReviewSectionFeedbackCreate",
     "ReviewSectionFeedbackUpdate",

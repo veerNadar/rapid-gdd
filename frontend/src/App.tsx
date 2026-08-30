@@ -1,6 +1,7 @@
 import { Link, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import ProjectView from './pages/ProjectView'
+import ReviewResults from './pages/ReviewResults'
 import ReviewUpload from './pages/ReviewUpload'
 
 export default function App() {
@@ -21,6 +22,10 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/projects/:projectId" element={<ProjectView />} />
         <Route path="/projects/:projectId/review" element={<ReviewUpload />} />
+        <Route
+          path="/projects/:projectId/reviews/:reviewId"
+          element={<ReviewResults />}
+        />
       </Routes>
     </div>
   )

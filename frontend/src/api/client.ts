@@ -5,9 +5,13 @@
 // here.
 
 import type {
+  FeedbackStatus,
   GDDSection,
   Project,
   ProjectCreateInput,
+  ProjectWithSections,
+  ReviewSectionFeedback,
+  ReviewWithFeedback,
   ReviewWithSections,
   SectionType,
 } from './types'
@@ -155,6 +159,31 @@ export function submitReview(
   return request<ReviewWithSections>('/reviews/', {
     method: 'POST',
     body: formData,
+  })
+}
+
+/** Fetch a review and all of its section critique feedback. */
+export function getReview(reviewId: string): Promise<ReviewWithFeedback> {
+  return request<ReviewWithFeedback>(`/reviews/${reviewId}`)
+}
+
+/** Accept, reject, or edit one piece of section feedback. Editing is
+ * just status: 'edited' plus an updated suggested_rewrite. */
+export function updateReviewFeedback(
+  feedbackId: string,
+  updates: { status?: FeedbackStatus; suggested_rewrite?: string },
+): Promise<ReviewSectionFeedback> {
+  return request<ReviewSectionFeedback>(`/reviews/feedback/${feedbackId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  })
+}
+
+/** Create a new project seeded with a review's accepted/edited sections. */
+export function promoteReview(reviewId: string, title?: string): Promise<ProjectWithSections> {
+  return request<ProjectWithSections>(`/reviews/${reviewId}/promote`, {
+    method: 'POST',
+    body: JSON.stringify({ title: title || undefined }),
   })
 }
 

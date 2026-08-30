@@ -67,11 +67,6 @@ export interface Review {
   created_at: string
 }
 
-export interface ReviewWithSections {
-  review: Review
-  sections: GDDSection[]
-}
-
 export interface ReviewSectionFeedback {
   id: string
   review_id: string
@@ -79,4 +74,20 @@ export interface ReviewSectionFeedback {
   critique: string
   suggested_rewrite: string | null
   status: FeedbackStatus
+}
+
+export interface ReviewWithSections {
+  review: Review
+  sections: GDDSection[]
+  feedback: ReviewSectionFeedback[]
+}
+
+export interface ReviewWithFeedback {
+  review: Review
+  feedback: ReviewSectionFeedback[]
+}
+
+export interface ProjectWithSections {
+  project: Project
+  sections: GDDSection[]
 }

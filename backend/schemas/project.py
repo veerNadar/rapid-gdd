@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .gdd_section import GDDSectionRead
+
 Dimension = Literal["2D", "3D"]
 Perspective = Literal[
     "first_person", "third_person", "top_down", "isometric", "side_scrolling"
@@ -52,3 +54,11 @@ class ProjectRead(ProjectBase):
 
     id: uuid.UUID
     created_at: datetime
+
+
+class ProjectWithSections(BaseModel):
+    """Response for endpoints that create a project and immediately seed
+    it with sections — e.g. promoting an accepted review."""
+
+    project: ProjectRead
+    sections: list[GDDSectionRead]

@@ -42,3 +42,11 @@ class ReviewWithFeedback(BaseModel):
 
     review: ReviewRead
     feedback: list[ReviewSectionFeedbackRead]
+
+
+class PromoteReviewRequest(BaseModel):
+    """Body for promoting a review's accepted/edited sections into a new
+    project. If `title` is omitted, a default derived from the original
+    project's title is used."""
+
+    title: str | None = None

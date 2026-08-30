@@ -1,17 +1,15 @@
 import { type ChangeEvent, type FormEvent, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { describeApiError, submitReview } from '../api/client'
-import type { ReviewWithSections } from '../api/types'
 import Spinner from '../components/Spinner'
-import { SECTION_LABELS, SECTION_ORDER } from '../sectionLabels'
 
 export default function ReviewUpload() {
   const { projectId } = useParams<{ projectId: string }>()
+  const navigate = useNavigate()
   const [content, setContent] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [result, setResult] = useState<ReviewWithSections | null>(null)
 
   const canSubmit = content.trim() !== '' || file !== null
 
@@ -33,7 +31,7 @@ export default function ReviewUpload() {
     setError(null)
     try {
       const uploaded = await submitReview(projectId, file ? { file } : { content })
-      setResult(uploaded)
+      navigate(`/projects/${projectId}/reviews/${uploaded.review.id}`)
     } catch (err) {
       setError(describeApiError(err, 'Failed to submit review.'))
     } finally {
@@ -41,49 +39,12 @@ export default function ReviewUpload() {
     }
   }
 
-  if (result) {
-    const populatedTypes = new Set(result.sections.map((s) => s.section_type))
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-12">
-        <h1 className="text-2xl font-semibold text-slate-900">Uploaded</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Gemini sorted your document into {result.sections.length} of {SECTION_ORDER.length}{' '}
-          sections. Anything it couldn't place landed under "Unmapped Content" in Additional
-          Design Specifications.
-        </p>
-
-        <div className="mt-6 space-y-2">
-          {SECTION_ORDER.map((sectionType) => (
-            <div
-              key={sectionType}
-              className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm"
-            >
-              <span className="text-slate-700">{SECTION_LABELS[sectionType]}</span>
-              {populatedTypes.has(sectionType) ? (
-                <span className="text-xs text-emerald-600">Parsed</span>
-              ) : (
-                <span className="text-xs text-slate-400">No content found</span>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <Link
-          to={`/projects/${projectId}`}
-          className="mt-6 inline-block rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white"
-        >
-          View project →
-        </Link>
-      </div>
-    )
-  }
-
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <h1 className="text-2xl font-semibold text-slate-900">Upload for Review</h1>
       <p className="mt-1 text-sm text-slate-500">
-        Paste an existing GDD, or upload a .txt/.docx file, and Gemini will sort it into
-        Rapid GDD's sections.
+        Paste an existing GDD, or upload a .txt/.docx file. Gemini will sort it into Rapid
+        GDD's sections and critique each one.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
@@ -134,7 +95,7 @@ export default function ReviewUpload() {
           className="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
         >
           {submitting && <Spinner className="border-slate-500 border-t-white" />}
-          {submitting ? 'Parsing with Gemini…' : 'Submit for Review'}
+          {submitting ? 'Parsing & critiquing with Gemini…' : 'Submit for Review'}
         </button>
       </form>
     </div>

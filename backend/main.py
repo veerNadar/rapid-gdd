@@ -16,6 +16,7 @@ app.add_middleware(
 
 app.include_router(projects.router)
 app.include_router(sections.router)
+app.include_router(sections.generation_router)
 app.include_router(reviews.router)
 
 

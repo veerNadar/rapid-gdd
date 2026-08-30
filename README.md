@@ -17,7 +17,8 @@ python -m venv venv
 ./venv/Scripts/activate   # Windows
 pip install -r requirements.txt
 cp .env.example .env      # fill in DATABASE_URL and GOOGLE_API_KEY
-uvicorn app.main:app --reload
+alembic upgrade head       # apply migrations
+uvicorn main:app --reload
 ```
 
 ### Frontend

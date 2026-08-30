@@ -5,7 +5,7 @@ AI-powered Game Design Document generator and reviewer for indie/solo game devel
 ## Structure
 
 - `backend/` — Python FastAPI service (see `backend/requirements.txt`; uses a local `venv`)
-- `frontend/` — React app scaffolded with Vite
+- `frontend/` — React + TypeScript app scaffolded with Vite, routed with react-router-dom, styled with Tailwind
 
 ## Getting started
 

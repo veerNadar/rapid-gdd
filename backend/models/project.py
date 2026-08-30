@@ -16,13 +16,13 @@ class Project(Base):
         {
             "genre": "metroidvania",
             "dimension": "2D",
-            "perspective": "side-scrolling",
+            "perspective": "side_scrolling",
             "multiplayer": "singleplayer",
             "core_hook": "you play as the dungeon, not the hero",
             "scope_team_size": "solo, 6 months",
-            "target_platform": "PC (Steam)",
+            "target_platform": ["PC (Steam)", "Nintendo Switch"],
             "reference_games": ["Hollow Knight", "Dead Cells"],
-            "target_feeling": "tense but rewarding exploration"
+            "target_feeling": "tense"
         }
     """
 

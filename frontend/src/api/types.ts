@@ -13,15 +13,27 @@ export type ReviewSource = 'uploaded' | 'generated'
 
 export type FeedbackStatus = 'pending' | 'accepted' | 'rejected' | 'edited'
 
+export type Dimension = '2D' | '3D'
+
+export type Perspective =
+  | 'first_person'
+  | 'third_person'
+  | 'top_down'
+  | 'isometric'
+  | 'side_scrolling'
+
+export type MultiplayerMode = 'singleplayer' | 'multiplayer'
+
 export interface IntakeData {
   genre?: string
-  dimension?: string // "2D" | "3D"
-  perspective?: string
-  multiplayer?: string
+  dimension?: Dimension
+  perspective?: Perspective
+  multiplayer?: MultiplayerMode
   core_hook?: string
   scope_team_size?: string
-  target_platform?: string
+  target_platform?: string[]
   reference_games?: string[]
+  // A fixed set of options plus a free-text "other" choice both land here.
   target_feeling?: string
 }
 

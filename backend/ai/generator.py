@@ -9,7 +9,8 @@ from langchain_google_genai.chat_models import (
     GoogleRateLimitError,
 )
 
-from ai.prompts import SECTION_DEPENDENCIES, SECTION_LABELS, SECTION_PROMPTS
+from ai.context import format_context, intake_variables
+from ai.prompts import SECTION_PROMPTS
 from config import settings
 from models import Project
 from models.enums import SectionType
@@ -61,54 +62,16 @@ def _get_llm() -> ChatGoogleGenerativeAI:
     )
 
 
-def _fmt(value: str | None) -> str:
-    return value if value else "Not specified"
-
-
-def _fmt_list(values: list[str] | None) -> str:
-    return ", ".join(values) if values else "Not specified"
-
-
-def _format_context(
-    section_type: SectionType, available_sections: dict[SectionType, str] | None
-) -> str:
-    """Build the "already-generated sections" block for a section's
-    prompt, limited to the sections it's declared to depend on (see
-    `ai.prompts.SECTION_DEPENDENCIES`) and only including ones that are
-    actually present in `available_sections`."""
-    relevant_types = SECTION_DEPENDENCIES.get(section_type, [])
-    if available_sections:
-        blocks = [
-            f"#### {SECTION_LABELS[dep_type]}\n{available_sections[dep_type]}"
-            for dep_type in relevant_types
-            if dep_type in available_sections
-        ]
-        if blocks:
-            return "\n\n".join(blocks)
-    return "(No other sections have been generated yet.)"
-
-
 def _prompt_variables(
     project: Project,
     section_type: SectionType,
     available_sections: dict[SectionType, str] | None,
 ) -> dict[str, str]:
-    """Flatten a project's intake JSON into the prompt template's
-    variables, substituting "Not specified" for anything left blank, plus
+    """The generation prompt's variables: the project's intake data, plus
     the cross-section consistency context."""
-    intake = project.intake_data or {}
     return {
-        "title": project.title,
-        "genre": _fmt(intake.get("genre")),
-        "dimension": _fmt(intake.get("dimension")),
-        "perspective": _fmt(intake.get("perspective")),
-        "multiplayer": _fmt(intake.get("multiplayer")),
-        "core_hook": _fmt(intake.get("core_hook")),
-        "scope_team_size": _fmt(intake.get("scope_team_size")),
-        "target_platform": _fmt_list(intake.get("target_platform")),
-        "reference_games": _fmt_list(intake.get("reference_games")),
-        "target_feeling": _fmt(intake.get("target_feeling")),
-        "context": _format_context(section_type, available_sections),
+        **intake_variables(project),
+        "context": format_context(section_type, available_sections),
     }
 
 

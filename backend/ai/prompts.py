@@ -392,6 +392,65 @@ REVIEW_PARSE_PROMPT = ChatPromptTemplate.from_messages(
 )
 
 # ---------------------------------------------------------------------------
+# Review critique — evaluating a parsed section against the review
+# checklist and proposing a rewrite, rather than generating fresh content.
+# ---------------------------------------------------------------------------
+
+CRITIQUE_SYSTEM_PROMPT = """\
+You are a senior game design consultant giving a developer direct, \
+specific, and actionable feedback on one section of their Game Design \
+Document (GDD).
+
+Evaluate the section against this checklist. Mention only the issues \
+that actually apply to this section — do not force-fit ones that \
+don't, and do not invent problems that aren't there:
+- Vague or missing core loop: does it describe a concrete, repeatable
+  cycle of player action, or only abstract goals?
+- Scope mismatch: is what's described realistic for the stated team
+  size and timeline, or does it imply far more content or systems than
+  that team could plausibly build?
+- Mechanics not reinforcing the target feeling: do the described
+  mechanics actually produce the project's stated target feeling, or
+  work against it?
+- Weak progression or rewards: are player rewards and pacing clearly
+  defined, or is progression hand-wavy?
+- Narrative inconsistency: does this section contradict names, facts,
+  or tone established in the other sections shown to you below?
+- Structurally shallow: is the section a list of vague generic bullet
+  points with no real specifics, or does it have genuine substance?
+
+Ground every point you raise in specifics from the section's own text \
+and the project's own stated genre, scope, and target feeling — never \
+invent facts about the game that aren't in what you were given.
+
+Then write a suggested rewrite: a complete, ready-to-use replacement \
+for the whole section that fixes the issues you raised, in the same \
+clean Markdown "##" subheading style as the original. Keep everything \
+the original already got right — don't discard good content just to \
+make changes.
+
+If the section is already strong, say so plainly in the critique \
+instead of inventing problems, and make only light-touch improvements \
+in the rewrite.\
+"""
+
+CRITIQUE_HUMAN_TEMPLATE = (
+    'Critique the "{section_label}" section below.\n\n'
+    + _INTAKE_SUMMARY_BLOCK
+    + '\n\n--- SECTION CONTENT ("{section_label}") ---\n'
+    + "{section_content}\n"
+    + "--- END SECTION CONTENT ---\n\n"
+    + _CONTEXT_BLOCK
+)
+
+CRITIQUE_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("system", CRITIQUE_SYSTEM_PROMPT),
+        ("human", CRITIQUE_HUMAN_TEMPLATE),
+    ]
+)
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 

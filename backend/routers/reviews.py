@@ -1,15 +1,28 @@
 import io
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from ai.review_parser import RateLimitError, ReviewParsingError, parse_gdd_content
+from ai.critique import (
+    CritiqueError,
+    RateLimitError as CritiqueRateLimitError,
+    critique_section,
+)
+from ai.review_parser import (
+    RateLimitError as ParseRateLimitError,
+    ReviewParsingError,
+    parse_gdd_content,
+)
 from database import get_db
-from models import Project, Review
+from models import Project, Review, ReviewSectionFeedback
 from models.enums import ReviewSource
-from schemas import ReviewSectionFeedbackUpdate, ReviewWithSections
+from schemas import ReviewSectionFeedbackUpdate, ReviewWithFeedback, ReviewWithSections
 from services.gdd_sections import persist_section
+from services.review_feedback import persist_feedback
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
@@ -54,8 +67,9 @@ def create_review(
     db: Session = Depends(get_db),
 ):
     """Accept a developer's own GDD — pasted as text or uploaded as a
-    .txt/.docx file — parse it into our section schema with Gemini, and
-    store both the review record and the parsed sections."""
+    .txt/.docx file — parse it into our section schema with Gemini,
+    critique each parsed section against the review checklist, and store
+    the review record, the parsed sections, and the critique feedback."""
     project = db.get(Project, project_id)
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -75,7 +89,7 @@ def create_review(
 
     try:
         parsed_sections = parse_gdd_content(raw_text)
-    except RateLimitError as err:
+    except ParseRateLimitError as err:
         raise HTTPException(status_code=429, detail=str(err)) from err
     except ReviewParsingError as err:
         raise HTTPException(status_code=502, detail=str(err)) from err
@@ -87,18 +101,69 @@ def create_review(
     db.commit()
     db.refresh(review)
 
-    saved_sections = [
-        persist_section(db, project_id, section_type, section_content)
+    populated_sections = {
+        section_type: section_content
         for section_type, section_content in parsed_sections.items()
         if section_content
+    }
+    saved_sections = [
+        persist_section(db, project_id, section_type, section_content)
+        for section_type, section_content in populated_sections.items()
     ]
 
-    return ReviewWithSections(review=review, sections=saved_sections)
+    # Critique each parsed section. A rate limit means every further call
+    # will fail too, so stop there and keep whatever feedback was already
+    # generated; a one-off failure on a single section just skips that
+    # section rather than failing the whole (already-successful) upload.
+    feedback_rows: list[ReviewSectionFeedback] = []
+    for section_type, section_content in populated_sections.items():
+        try:
+            result = critique_section(
+                project, section_type, section_content, populated_sections
+            )
+        except CritiqueRateLimitError as err:
+            logger.warning(
+                "review %s: stopping critique early after %d/%d sections: %s",
+                review.id,
+                len(feedback_rows),
+                len(populated_sections),
+                err,
+            )
+            break
+        except CritiqueError as err:
+            logger.warning(
+                "review %s: skipping critique for section=%s: %s",
+                review.id,
+                section_type.value,
+                err,
+            )
+            continue
+
+        feedback_rows.append(
+            persist_feedback(
+                db, review.id, section_type, result.critique, result.suggested_rewrite
+            )
+        )
+
+    return ReviewWithSections(
+        review=review, sections=saved_sections, feedback=feedback_rows
+    )
 
 
-@router.get("/{review_id}")
+@router.get("/{review_id}", response_model=ReviewWithFeedback)
 def get_review(review_id: uuid.UUID, db: Session = Depends(get_db)):
-    raise NotImplementedError
+    """A review record plus all of its section critique feedback."""
+    review = db.get(Review, review_id)
+    if review is None:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    feedback = (
+        db.query(ReviewSectionFeedback)
+        .filter(ReviewSectionFeedback.review_id == review_id)
+        .order_by(ReviewSectionFeedback.section_type)
+        .all()
+    )
+    return ReviewWithFeedback(review=review, feedback=feedback)
 
 
 @router.get("/{review_id}/feedback")

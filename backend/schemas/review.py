@@ -1,11 +1,12 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from models.enums import ReviewSource
 
 from .gdd_section import GDDSectionRead
+from .review_section_feedback import ReviewSectionFeedbackRead
 
 
 class ReviewBase(BaseModel):
@@ -26,8 +27,18 @@ class ReviewRead(ReviewBase):
 
 
 class ReviewWithSections(BaseModel):
-    """Response for a review-upload request: the review record, plus
-    whichever sections were populated by parsing its content."""
+    """Response for a review-upload request: the review record, the
+    sections parsed from its content, and the critique feedback
+    generated for each of them."""
 
     review: ReviewRead
     sections: list[GDDSectionRead]
+    feedback: list[ReviewSectionFeedbackRead] = Field(default_factory=list)
+
+
+class ReviewWithFeedback(BaseModel):
+    """Response for fetching a review: the review record plus all of its
+    section critique feedback."""
+
+    review: ReviewRead
+    feedback: list[ReviewSectionFeedbackRead]

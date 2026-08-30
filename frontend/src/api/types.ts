@@ -63,7 +63,13 @@ export interface Review {
   id: string
   project_id: string
   source: ReviewSource
+  raw_content: string | null
   created_at: string
+}
+
+export interface ReviewWithSections {
+  review: Review
+  sections: GDDSection[]
 }
 
 export interface ReviewSectionFeedback {

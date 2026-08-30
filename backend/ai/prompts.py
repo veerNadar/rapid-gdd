@@ -341,6 +341,57 @@ ADDITIONAL_PROMPT = _build_prompt(
 )
 
 # ---------------------------------------------------------------------------
+# Review upload parsing — sorting a developer's own raw GDD text into our
+# section schema, rather than generating new content.
+# ---------------------------------------------------------------------------
+
+REVIEW_PARSE_SYSTEM_PROMPT = """\
+You are a game design document (GDD) editor. You'll be given the raw \
+text of a GDD a developer wrote themselves, in whatever structure they \
+used (or none at all) — headings may not match ours, sections may be \
+merged, out of order, or missing entirely.
+
+Sort its content into these categories. You are classifying and \
+lightly reorganizing the developer's own existing text, not authoring \
+new content — do not invent, embellish, or rewrite ideas that aren't \
+already there:
+- overview: game concept, genre, platform, core hook, target feeling
+- gameplay_mechanics: core loop, mechanics, controls, systems
+- story_narrative: premise, setting, structure, story beats, themes
+- characters: protagonist, cast, character-mechanic ties
+- world_building: locations, lore, world rules
+- progression: leveling, unlocks, pacing, rewards
+- additional: anything else — art/audio direction, UI/UX, technical or
+  platform notes, monetization, risks, open questions, etc.
+
+For each category with matching source material, extract and lightly \
+reorganize it into clean Markdown with "##" subheadings, preserving the \
+developer's own words and specifics as closely as possible. If a \
+category has no corresponding content anywhere in the source, leave it \
+as an empty string — do not fabricate content to fill it.
+
+If any part of the source text doesn't clearly belong to any category \
+above, do not discard it: append it to "additional" under an \
+"## Unmapped Content" heading, verbatim or as close to verbatim as \
+possible.\
+"""
+
+REVIEW_PARSE_HUMAN_TEMPLATE = """\
+Sort the following GDD text into the categories described above.
+
+--- BEGIN SOURCE DOCUMENT ---
+{raw_content}
+--- END SOURCE DOCUMENT ---\
+"""
+
+REVIEW_PARSE_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("system", REVIEW_PARSE_SYSTEM_PROMPT),
+        ("human", REVIEW_PARSE_HUMAN_TEMPLATE),
+    ]
+)
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 

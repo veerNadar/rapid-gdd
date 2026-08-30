@@ -8,8 +8,7 @@ import type {
   GDDSection,
   Project,
   ProjectCreateInput,
-  Review,
-  ReviewSource,
+  ReviewWithSections,
   SectionType,
 } from './types'
 
@@ -27,10 +26,14 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  // A FormData body (file upload) must NOT get an explicit Content-Type —
+  // the browser sets its own, including the multipart boundary.
+  const isFormData = init?.body instanceof FormData
+
   let res: Response
   try {
     res = await fetch(`${API_BASE_URL}${path}`, {
-      headers: { 'Content-Type': 'application/json' },
+      ...(isFormData ? {} : { headers: { 'Content-Type': 'application/json' } }),
       ...init,
     })
   } catch {
@@ -135,15 +138,23 @@ export function updateSection(sectionId: string, content: string): Promise<GDDSe
   })
 }
 
-/** Submit a GDD (uploaded file text, or a generated draft) for review. */
+/** Submit a developer's own GDD — pasted text or an uploaded .txt/.docx
+ * file — to be parsed by Gemini into our section schema. Returns the
+ * created review record plus whichever sections were populated. */
 export function submitReview(
   projectId: string,
-  source: ReviewSource,
-  content?: string,
-): Promise<Review> {
-  return request<Review>('/reviews/', {
+  input: { content: string } | { file: File },
+): Promise<ReviewWithSections> {
+  const formData = new FormData()
+  formData.append('project_id', projectId)
+  if ('file' in input) {
+    formData.append('file', input.file)
+  } else {
+    formData.append('content', input.content)
+  }
+  return request<ReviewWithSections>('/reviews/', {
     method: 'POST',
-    body: JSON.stringify({ project_id: projectId, source, content }),
+    body: formData,
   })
 }
 

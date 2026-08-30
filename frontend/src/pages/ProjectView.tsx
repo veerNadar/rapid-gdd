@@ -4,16 +4,7 @@ import { describeApiError, getProject, listSections } from '../api/client'
 import type { GDDSection, Project, SectionType } from '../api/types'
 import SectionCard from '../components/SectionCard'
 import SectionCardSkeleton from '../components/SectionCardSkeleton'
-
-const SECTION_LABELS: Record<SectionType, string> = {
-  overview: 'Game Overview',
-  gameplay_mechanics: 'Gameplay & Mechanics',
-  story_narrative: 'Story & Narrative',
-  characters: 'Characters',
-  world_building: 'World-Building',
-  progression: 'Progression Systems',
-  additional: 'Additional Design Specifications',
-}
+import { SECTION_LABELS } from '../sectionLabels'
 
 export default function ProjectView() {
   const { projectId } = useParams<{ projectId: string }>()

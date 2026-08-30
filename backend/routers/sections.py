@@ -9,6 +9,7 @@ from database import get_db
 from models import GDDSection, Project
 from models.enums import SectionType
 from schemas import GDDSectionCreate, GDDSectionRead, GDDSectionUpdate
+from services.gdd_sections import latest_section_rows, latest_sections, persist_section
 
 router = APIRouter(prefix="/sections", tags=["sections"])
 
@@ -18,30 +19,10 @@ router = APIRouter(prefix="/sections", tags=["sections"])
 generation_router = APIRouter(prefix="/projects", tags=["sections"])
 
 
-def _latest_section_rows(db: Session, project_id: uuid.UUID) -> list[GDDSection]:
-    """The most recent version of each section type already generated
-    for a project (one row per section type), as full rows."""
-    return (
-        db.query(GDDSection)
-        .filter(GDDSection.project_id == project_id)
-        .order_by(GDDSection.section_type, GDDSection.version.desc())
-        .distinct(GDDSection.section_type)
-        .all()
-    )
-
-
-def _latest_sections(db: Session, project_id: uuid.UUID) -> dict[SectionType, str]:
-    """The most recent version of each section type already generated
-    for a project, keyed by section type."""
-    return {
-        row.section_type: row.content for row in _latest_section_rows(db, project_id)
-    }
-
-
 @router.get("/", response_model=list[GDDSectionRead])
 def list_sections(project_id: uuid.UUID, db: Session = Depends(get_db)):
     """The latest version of each section type generated for a project."""
-    return _latest_section_rows(db, project_id)
+    return latest_section_rows(db, project_id)
 
 
 @router.post("/")
@@ -78,33 +59,6 @@ def delete_section(section_id: uuid.UUID, db: Session = Depends(get_db)):
     raise NotImplementedError
 
 
-def _persist_section(
-    db: Session, project_id: uuid.UUID, section_type: SectionType, content: str
-) -> GDDSection:
-    """Save a newly generated section as the next version for its type."""
-    latest = (
-        db.query(GDDSection)
-        .filter(
-            GDDSection.project_id == project_id,
-            GDDSection.section_type == section_type,
-        )
-        .order_by(GDDSection.version.desc())
-        .first()
-    )
-    next_version = (latest.version + 1) if latest else 1
-
-    section = GDDSection(
-        project_id=project_id,
-        section_type=section_type,
-        content=content,
-        version=next_version,
-    )
-    db.add(section)
-    db.commit()
-    db.refresh(section)
-    return section
-
-
 @generation_router.post(
     "/{project_id}/sections/{section_type}/generate",
     response_model=GDDSectionRead,
@@ -119,7 +73,7 @@ def generate_project_section(
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    available_sections = _latest_sections(db, project_id)
+    available_sections = latest_sections(db, project_id)
 
     try:
         content = generate_section(project, section_type, available_sections)
@@ -128,7 +82,7 @@ def generate_project_section(
     except SectionGenerationError as err:
         raise HTTPException(status_code=502, detail=str(err)) from err
 
-    return _persist_section(db, project_id, section_type, content)
+    return persist_section(db, project_id, section_type, content)
 
 
 @generation_router.post(
@@ -151,7 +105,7 @@ def generate_full_gdd(project_id: uuid.UUID, db: Session = Depends(get_db)):
 
     # Seed with anything already generated, so re-running this on a
     # partially-complete project still gives later sections real context.
-    available_sections = _latest_sections(db, project_id)
+    available_sections = latest_sections(db, project_id)
     generated: list[GDDSection] = []
 
     for section_type in SECTION_ORDER:
@@ -170,7 +124,7 @@ def generate_full_gdd(project_id: uuid.UUID, db: Session = Depends(get_db)):
         except SectionGenerationError as err:
             raise HTTPException(status_code=502, detail=str(err)) from err
 
-        section = _persist_section(db, project_id, section_type, content)
+        section = persist_section(db, project_id, section_type, content)
         available_sections[section_type] = content
         generated.append(section)
 

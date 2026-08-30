@@ -27,14 +27,39 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...init,
-  })
+  let res: Response
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...init,
+    })
+  } catch {
+    // fetch itself threw: the network is down, the backend isn't
+    // running, CORS blocked it, etc. — there's no HTTP response at all.
+    throw new ApiError(0, 'Could not reach the server. Is the backend running?')
+  }
 
   if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    throw new ApiError(res.status, body || res.statusText)
+    const rawBody = await res.text().catch(() => '')
+    // FastAPI error responses are {"detail": "..."} — surface just the
+    // detail message when present, rather than the raw JSON blob.
+    let message = rawBody || res.statusText
+    if (rawBody) {
+      try {
+        const parsed: unknown = JSON.parse(rawBody)
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          'detail' in parsed &&
+          typeof parsed.detail === 'string'
+        ) {
+          message = parsed.detail
+        }
+      } catch {
+        // Not JSON — keep the raw text as the message.
+      }
+    }
+    throw new ApiError(res.status, message)
   }
 
   if (res.status === 204) {
@@ -42,6 +67,25 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return (await res.json()) as T
+}
+
+/** Turn a caught error into a short, user-facing message. Recognizes
+ * known ApiError status codes — especially 429, Gemini's free-tier rate
+ * limit — and falls back to the error's own message otherwise. */
+export function describeApiError(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) {
+    if (err.status === 429) {
+      return err.message || "Gemini's free-tier rate limit was hit. Wait a bit and try again."
+    }
+    if (err.status === 0) {
+      return err.message
+    }
+    return err.message || fallback
+  }
+  if (err instanceof Error) {
+    return err.message || fallback
+  }
+  return fallback
 }
 
 /** Create a new project from intake form answers. */

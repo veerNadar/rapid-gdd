@@ -1,7 +1,8 @@
 import { type FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createProject } from '../api/client'
+import { createProject, describeApiError } from '../api/client'
 import type { Dimension, MultiplayerMode, Perspective } from '../api/types'
+import Spinner from '../components/Spinner'
 import TagInput from '../components/TagInput'
 
 const PERSPECTIVE_OPTIONS: { value: Perspective; label: string }[] = [
@@ -73,7 +74,7 @@ export default function Home() {
       })
       navigate(`/projects/${project.id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create project')
+      setError(describeApiError(err, 'Failed to create project.'))
     } finally {
       setSubmitting(false)
     }
@@ -271,8 +272,9 @@ export default function Home() {
         <button
           type="submit"
           disabled={submitting || !canSubmit}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          className="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
         >
+          {submitting && <Spinner className="border-slate-500 border-t-white" />}
           {submitting ? 'Creating…' : 'Create Project'}
         </button>
       </form>

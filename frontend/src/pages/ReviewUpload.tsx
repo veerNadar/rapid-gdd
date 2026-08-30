@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { submitReview } from '../api/client'
+import { describeApiError, submitReview } from '../api/client'
+import Spinner from '../components/Spinner'
 
 export default function ReviewUpload() {
   const { projectId } = useParams<{ projectId: string }>()
@@ -18,7 +19,7 @@ export default function ReviewUpload() {
       await submitReview(projectId, 'uploaded', content)
       setSubmitted(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit review')
+      setError(describeApiError(err, 'Failed to submit review.'))
     } finally {
       setSubmitting(false)
     }
@@ -69,18 +70,15 @@ export default function ReviewUpload() {
           />
         </div>
 
-        {error && (
-          <p className="text-sm text-red-600">
-            {error} (expected until the backend endpoint is implemented)
-          </p>
-        )}
+        {error && <p className="text-sm text-red-600">{error}</p>}
         {submitted && <p className="text-sm text-emerald-600">Review submitted.</p>}
 
         <button
           type="submit"
           disabled={submitting || !content}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          className="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
         >
+          {submitting && <Spinner className="border-slate-500 border-t-white" />}
           {submitting ? 'Submitting…' : 'Submit for Review'}
         </button>
       </form>

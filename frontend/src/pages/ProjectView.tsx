@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getProject, listSections } from '../api/client'
+import { describeApiError, getProject, listSections } from '../api/client'
 import type { GDDSection, Project, SectionType } from '../api/types'
 import SectionCard from '../components/SectionCard'
+import SectionCardSkeleton from '../components/SectionCardSkeleton'
 
 const SECTION_LABELS: Record<SectionType, string> = {
   overview: 'Game Overview',
@@ -32,7 +33,7 @@ export default function ProjectView() {
         }
         setSections(byType)
       })
-      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load project'))
+      .catch((err) => setError(describeApiError(err, 'Failed to load project')))
       .finally(() => setLoading(false))
   }, [projectId])
 
@@ -53,23 +54,25 @@ export default function ProjectView() {
       </Link>
 
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
-      {loading && <p className="mt-4 text-sm text-slate-400">Loading…</p>}
 
-      {!loading && projectId && (
-        <div className="mt-8 space-y-4">
-          {(Object.entries(SECTION_LABELS) as [SectionType, string][]).map(
-            ([sectionType, label]) => (
-              <SectionCard
-                key={sectionType}
-                projectId={projectId}
-                sectionType={sectionType}
-                label={label}
-                section={sections[sectionType]}
-              />
-            ),
-          )}
-        </div>
-      )}
+      <div className="mt-8 space-y-4">
+        {loading
+          ? Object.keys(SECTION_LABELS).map((sectionType) => (
+              <SectionCardSkeleton key={sectionType} />
+            ))
+          : projectId &&
+            (Object.entries(SECTION_LABELS) as [SectionType, string][]).map(
+              ([sectionType, label]) => (
+                <SectionCard
+                  key={sectionType}
+                  projectId={projectId}
+                  sectionType={sectionType}
+                  label={label}
+                  section={sections[sectionType]}
+                />
+              ),
+            )}
+      </div>
     </div>
   )
 }

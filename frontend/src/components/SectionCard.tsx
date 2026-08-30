@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { generateSection, updateSection } from '../api/client'
+import { ApiError, describeApiError, generateSection, updateSection } from '../api/client'
 import type { GDDSection, SectionType } from '../api/types'
+import Spinner from './Spinner'
 
 interface SectionCardProps {
   projectId: string
@@ -21,6 +22,7 @@ export default function SectionCard({
   const [generating, setGenerating] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isRateLimit, setIsRateLimit] = useState(false)
 
   const busy = generating || saving
 
@@ -39,12 +41,14 @@ export default function SectionCard({
     if (!section) return
     setSaving(true)
     setError(null)
+    setIsRateLimit(false)
     try {
       const updated = await updateSection(section.id, draft)
       setSection(updated)
       setIsEditing(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save edit')
+      setError(describeApiError(err, 'Failed to save this edit.'))
+      setIsRateLimit(err instanceof ApiError && err.status === 429)
     } finally {
       setSaving(false)
     }
@@ -53,16 +57,26 @@ export default function SectionCard({
   async function handleGenerate() {
     setGenerating(true)
     setError(null)
+    setIsRateLimit(false)
     try {
       const generated = await generateSection(projectId, sectionType)
       setSection(generated)
       setIsEditing(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate section')
+      setError(describeApiError(err, 'Failed to generate this section.'))
+      setIsRateLimit(err instanceof ApiError && err.status === 429)
     } finally {
       setGenerating(false)
     }
   }
+
+  const generateLabel = generating
+    ? 'Generating…'
+    : error
+      ? 'Retry'
+      : section
+        ? 'Regenerate'
+        : 'Generate'
 
   return (
     <section className="rounded-lg border border-slate-200 p-4">
@@ -75,7 +89,9 @@ export default function SectionCard({
             </span>
           )}
           {generating && (
-            <span className="text-xs text-slate-400">Generating…</span>
+            <span className="flex items-center gap-1.5 text-xs text-slate-400">
+              <Spinner /> Generating…
+            </span>
           )}
         </div>
         <div className="flex gap-2">
@@ -93,14 +109,29 @@ export default function SectionCard({
             type="button"
             onClick={handleGenerate}
             disabled={busy}
-            className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+            className={`rounded-md border px-2.5 py-1 text-xs font-medium disabled:opacity-40 ${
+              error
+                ? 'border-red-300 text-red-700 hover:bg-red-50'
+                : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+            }`}
           >
-            {generating ? 'Generating…' : section ? 'Regenerate' : 'Generate'}
+            {generateLabel}
           </button>
         </div>
       </div>
 
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && (
+        <div
+          className={`mt-2 flex items-start gap-2 rounded-md border px-3 py-2 text-xs ${
+            isRateLimit
+              ? 'border-amber-200 bg-amber-50 text-amber-800'
+              : 'border-red-200 bg-red-50 text-red-700'
+          }`}
+        >
+          <span aria-hidden>{isRateLimit ? '⏳' : '⚠️'}</span>
+          <span>{error}</span>
+        </div>
+      )}
 
       <div className="mt-3">
         {isEditing ? (
@@ -117,8 +148,9 @@ export default function SectionCard({
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+                className="flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
               >
+                {saving && <Spinner className="border-slate-500 border-t-white" />}
                 {saving ? 'Saving…' : 'Save'}
               </button>
               <button
@@ -133,10 +165,14 @@ export default function SectionCard({
           </div>
         ) : section ? (
           <p className="whitespace-pre-wrap text-sm text-slate-700">{section.content}</p>
+        ) : generating ? (
+          <div className="animate-pulse space-y-2">
+            <div className="h-3 w-full rounded bg-slate-100" />
+            <div className="h-3 w-11/12 rounded bg-slate-100" />
+            <div className="h-3 w-3/4 rounded bg-slate-100" />
+          </div>
         ) : (
-          <p className="text-sm text-slate-400 italic">
-            {generating ? 'Generating…' : 'Not generated yet.'}
-          </p>
+          <p className="text-sm text-slate-400 italic">Not generated yet.</p>
         )}
       </div>
     </section>

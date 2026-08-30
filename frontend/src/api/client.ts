@@ -57,26 +57,37 @@ export function getProject(projectId: string): Promise<Project> {
   return request<Project>(`/projects/${projectId}`)
 }
 
-/** Ask the backend to generate a fresh draft of one GDD section. */
+/** The latest version of each section already generated for a project. */
+export function listSections(projectId: string): Promise<GDDSection[]> {
+  return request<GDDSection[]>(`/sections/?project_id=${encodeURIComponent(projectId)}`)
+}
+
+/** Ask the backend to (re)generate one GDD section. Generating a section
+ * that already has content creates a new version rather than overwriting
+ * the old one — call this the same way for both the initial "Generate"
+ * and a later "Regenerate". */
 export function generateSection(
   projectId: string,
   sectionType: SectionType,
 ): Promise<GDDSection> {
-  return request<GDDSection>('/sections/generate', {
+  return request<GDDSection>(`/projects/${projectId}/sections/${sectionType}/generate`, {
     method: 'POST',
-    body: JSON.stringify({ project_id: projectId, section_type: sectionType }),
   })
 }
 
-/** Ask the backend to regenerate an existing section, optionally steered
- * by free-form instructions (e.g. "make it punchier"). */
-export function regenerateSection(
-  sectionId: string,
-  instructions?: string,
-): Promise<GDDSection> {
-  return request<GDDSection>(`/sections/${sectionId}/regenerate`, {
+/** Generate every section of a project's GDD in sequence. */
+export function generateFullGdd(projectId: string): Promise<GDDSection[]> {
+  return request<GDDSection[]>(`/projects/${projectId}/generate`, {
     method: 'POST',
-    body: JSON.stringify({ instructions }),
+  })
+}
+
+/** Manually edit a section's content in place (does not create a new
+ * version — that's reserved for AI (re)generation). */
+export function updateSection(sectionId: string, content: string): Promise<GDDSection> {
+  return request<GDDSection>(`/sections/${sectionId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ content }),
   })
 }
 

@@ -18,9 +18,30 @@ router = APIRouter(prefix="/sections", tags=["sections"])
 generation_router = APIRouter(prefix="/projects", tags=["sections"])
 
 
-@router.get("/")
+def _latest_section_rows(db: Session, project_id: uuid.UUID) -> list[GDDSection]:
+    """The most recent version of each section type already generated
+    for a project (one row per section type), as full rows."""
+    return (
+        db.query(GDDSection)
+        .filter(GDDSection.project_id == project_id)
+        .order_by(GDDSection.section_type, GDDSection.version.desc())
+        .distinct(GDDSection.section_type)
+        .all()
+    )
+
+
+def _latest_sections(db: Session, project_id: uuid.UUID) -> dict[SectionType, str]:
+    """The most recent version of each section type already generated
+    for a project, keyed by section type."""
+    return {
+        row.section_type: row.content for row in _latest_section_rows(db, project_id)
+    }
+
+
+@router.get("/", response_model=list[GDDSectionRead])
 def list_sections(project_id: uuid.UUID, db: Session = Depends(get_db)):
-    raise NotImplementedError
+    """The latest version of each section type generated for a project."""
+    return _latest_section_rows(db, project_id)
 
 
 @router.post("/")
@@ -33,29 +54,28 @@ def get_section(section_id: uuid.UUID, db: Session = Depends(get_db)):
     raise NotImplementedError
 
 
-@router.patch("/{section_id}")
+@router.patch("/{section_id}", response_model=GDDSectionRead)
 def update_section(
     section_id: uuid.UUID, payload: GDDSectionUpdate, db: Session = Depends(get_db)
 ):
-    raise NotImplementedError
+    """Manually edit a section's content in place. This does not create a
+    new version — versioning is reserved for AI (re)generation; a manual
+    edit just updates the current row's content and `updated_at`."""
+    section = db.get(GDDSection, section_id)
+    if section is None:
+        raise HTTPException(status_code=404, detail="Section not found")
+
+    if payload.content is not None:
+        section.content = payload.content
+
+    db.commit()
+    db.refresh(section)
+    return section
 
 
 @router.delete("/{section_id}")
 def delete_section(section_id: uuid.UUID, db: Session = Depends(get_db)):
     raise NotImplementedError
-
-
-def _latest_sections(db: Session, project_id: uuid.UUID) -> dict[SectionType, str]:
-    """The most recent version of each section type already generated
-    for a project, keyed by section type."""
-    rows = (
-        db.query(GDDSection)
-        .filter(GDDSection.project_id == project_id)
-        .order_by(GDDSection.section_type, GDDSection.version.desc())
-        .distinct(GDDSection.section_type)
-        .all()
-    )
-    return {row.section_type: row.content for row in rows}
 
 
 def _persist_section(

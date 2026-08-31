@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ApiError, describeApiError, generateSection, updateSection } from '../api/client'
 import type { GDDSection, SectionType } from '../api/types'
+import { btnSecondary, card } from '../styles'
 import Spinner from './Spinner'
 
 interface SectionCardProps {
@@ -79,7 +80,7 @@ export default function SectionCard({
         : 'Generate'
 
   return (
-    <section className="rounded-lg border border-slate-200 p-4">
+    <section className={card}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-slate-800">{label}</h2>
@@ -100,7 +101,7 @@ export default function SectionCard({
               type="button"
               onClick={startEditing}
               disabled={busy}
-              className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+              className={`${btnSecondary} px-2.5 py-1 text-xs`}
             >
               Edit
             </button>
@@ -109,10 +110,10 @@ export default function SectionCard({
             type="button"
             onClick={handleGenerate}
             disabled={busy}
-            className={`rounded-md border px-2.5 py-1 text-xs font-medium disabled:opacity-40 ${
+            className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
               error
-                ? 'border-red-300 text-red-700 hover:bg-red-50'
-                : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                ? 'border-red-300 bg-white text-red-700 hover:bg-red-50'
+                : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
             }`}
           >
             {generateLabel}
@@ -141,23 +142,23 @@ export default function SectionCard({
               onChange={(e) => setDraft(e.target.value)}
               disabled={saving}
               rows={12}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs focus:border-slate-500 focus:outline-none"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+                className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {saving && <Spinner className="border-slate-500 border-t-white" />}
+                {saving && <Spinner className="border-indigo-300 border-t-white" />}
                 {saving ? 'Saving…' : 'Save'}
               </button>
               <button
                 type="button"
                 onClick={cancelEditing}
                 disabled={saving}
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                className={`${btnSecondary} px-3 py-1.5 text-xs`}
               >
                 Cancel
               </button>

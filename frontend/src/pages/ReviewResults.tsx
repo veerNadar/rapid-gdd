@@ -6,6 +6,7 @@ import ReviewFeedbackCard from '../components/ReviewFeedbackCard'
 import SectionCardSkeleton from '../components/SectionCardSkeleton'
 import Spinner from '../components/Spinner'
 import { SECTION_LABELS } from '../sectionLabels'
+import { btnPrimary, card, inputClass } from '../styles'
 
 export default function ReviewResults() {
   const { projectId, reviewId } = useParams<{ projectId: string; reviewId: string }>()
@@ -76,7 +77,7 @@ export default function ReviewResults() {
       )}
       <Link
         to={`/projects/${projectId}`}
-        className="mt-3 inline-block text-sm text-slate-500 underline hover:text-slate-900"
+        className="mt-3 inline-block text-sm text-indigo-600 hover:text-indigo-700 hover:underline"
       >
         ← Back to project
       </Link>
@@ -85,7 +86,7 @@ export default function ReviewResults() {
 
       <form
         onSubmit={handlePromote}
-        className="mt-8 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4"
+        className={`${card} mt-8 flex flex-wrap items-center gap-3 bg-slate-50`}
       >
         <div className="flex-1">
           <label htmlFor="promoteTitle" className="block text-sm font-medium text-slate-700">
@@ -102,15 +103,15 @@ export default function ReviewResults() {
             onChange={(e) => setPromoteTitle(e.target.value)}
             placeholder="New project title (optional)"
             disabled={promoting}
-            className="mt-2 w-full max-w-sm rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-slate-500 focus:outline-none disabled:opacity-40"
+            className={`${inputClass} max-w-sm disabled:opacity-40`}
           />
         </div>
         <button
           type="submit"
           disabled={promoting || promotableCount === 0}
-          className="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          className={btnPrimary}
         >
-          {promoting && <Spinner className="border-slate-500 border-t-white" />}
+          {promoting && <Spinner className="border-indigo-300 border-t-white" />}
           {promoting ? 'Creating…' : 'Promote to New Project'}
         </button>
       </form>

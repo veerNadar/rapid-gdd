@@ -4,6 +4,7 @@ import { createProject, describeApiError } from '../api/client'
 import type { Dimension, MultiplayerMode, Perspective } from '../api/types'
 import Spinner from '../components/Spinner'
 import TagInput from '../components/TagInput'
+import { btnPrimary, card, inputClass, labelClass } from '../styles'
 
 const PERSPECTIVE_OPTIONS: { value: Perspective; label: string }[] = [
   { value: 'first_person', label: 'First-person' },
@@ -23,11 +24,7 @@ const FEELING_OPTIONS = [
   { value: 'other', label: 'Other…' },
 ]
 
-const inputClass =
-  'mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none'
-const labelClass = 'block text-sm font-medium text-slate-700'
-
-export default function Home() {
+export default function NewProject() {
   const navigate = useNavigate()
 
   const [title, setTitle] = useState('')
@@ -87,7 +84,7 @@ export default function Home() {
         Answer a few questions and Rapid GDD will scaffold your game design document.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+      <form onSubmit={handleSubmit} className={`${card} mt-8 space-y-6`}>
         <div>
           <label htmlFor="title" className={labelClass}>
             Project title
@@ -125,6 +122,7 @@ export default function Home() {
                   value={option}
                   checked={dimension === option}
                   onChange={() => setDimension(option)}
+                  className="accent-indigo-600"
                 />
                 {option}
               </label>
@@ -170,6 +168,7 @@ export default function Home() {
                   value={option.value}
                   checked={multiplayer === option.value}
                   onChange={() => setMultiplayer(option.value)}
+                  className="accent-indigo-600"
                 />
                 {option.label}
               </label>
@@ -269,12 +268,8 @@ export default function Home() {
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={submitting || !canSubmit}
-          className="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-        >
-          {submitting && <Spinner className="border-slate-500 border-t-white" />}
+        <button type="submit" disabled={submitting || !canSubmit} className={btnPrimary}>
+          {submitting && <Spinner className="border-indigo-300 border-t-white" />}
           {submitting ? 'Creating…' : 'Create Project'}
         </button>
       </form>

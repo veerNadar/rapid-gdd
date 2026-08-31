@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { describeApiError, getMetrics } from '../api/client'
 import type { CallType, MetricsSummary } from '../api/types'
 import { SECTION_LABELS } from '../sectionLabels'
+import { card } from '../styles'
 
 const CALL_TYPE_LABELS: Record<CallType, string> = {
   section_generation: 'Section Generation',
@@ -44,25 +45,25 @@ export default function Metrics() {
       ) : metrics ? (
         <>
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="rounded-lg border border-slate-200 p-4">
+            <div className={card}>
               <p className="text-xs text-slate-500">Total calls</p>
               <p className="mt-1 text-2xl font-semibold text-slate-900">
                 {metrics.total_calls}
               </p>
             </div>
-            <div className="rounded-lg border border-slate-200 p-4">
+            <div className={card}>
               <p className="text-xs text-slate-500">Tokens in / out</p>
               <p className="mt-1 text-2xl font-semibold text-slate-900">
                 {metrics.total_tokens_in} / {metrics.total_tokens_out}
               </p>
             </div>
-            <div className="rounded-lg border border-slate-200 p-4">
+            <div className={card}>
               <p className="text-xs text-slate-500">Total tokens</p>
               <p className="mt-1 text-2xl font-semibold text-slate-900">
                 {metrics.total_tokens_total}
               </p>
             </div>
-            <div className="rounded-lg border border-slate-200 p-4">
+            <div className={card}>
               <p className="text-xs text-slate-500">Calls today</p>
               <p className="mt-1 text-2xl font-semibold text-slate-900">
                 {metrics.calls_today}
@@ -73,7 +74,7 @@ export default function Metrics() {
             </div>
           </div>
 
-          <div className="mt-4 rounded-lg border border-slate-200 p-4">
+          <div className={`${card} mt-4`}>
             <div className="flex items-center justify-between text-xs text-slate-500">
               <span>Free-tier daily requests used</span>
               <span>
@@ -83,7 +84,7 @@ export default function Metrics() {
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
               <div
                 className={`h-full rounded-full ${
-                  (metrics.free_tier_usage_pct ?? 0) >= 1 ? 'bg-red-500' : 'bg-slate-900'
+                  (metrics.free_tier_usage_pct ?? 0) >= 1 ? 'bg-red-500' : 'bg-indigo-600'
                 }`}
                 style={{
                   width: `${Math.min(100, Math.round((metrics.free_tier_usage_pct ?? 0) * 100))}%`,

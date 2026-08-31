@@ -28,18 +28,30 @@ export default function ProjectView() {
       .finally(() => setLoading(false))
   }, [projectId])
 
+  const populatedCount = Object.keys(sections).length
+  const totalCount = Object.keys(SECTION_LABELS).length
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-2xl font-semibold text-slate-900">
-        {project?.title ?? `Project ${projectId}`}
-      </h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Generate, edit, and version each section of your game design document.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">
+            {project?.title ?? `Project ${projectId}`}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Generate, edit, and version each section of your game design document.
+          </p>
+        </div>
+        {!loading && (
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+            {populatedCount}/{totalCount} sections
+          </span>
+        )}
+      </div>
 
       <Link
         to={`/projects/${projectId}/review`}
-        className="mt-3 inline-block text-sm text-slate-500 underline hover:text-slate-900"
+        className="mt-3 inline-block text-sm text-indigo-600 hover:text-indigo-700 hover:underline"
       >
         Submit this GDD for review →
       </Link>

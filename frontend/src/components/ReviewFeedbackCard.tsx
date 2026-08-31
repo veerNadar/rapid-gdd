@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { describeApiError, updateReviewFeedback } from '../api/client'
 import type { FeedbackStatus, ReviewSectionFeedback } from '../api/types'
+import { btnDanger, btnSecondary, btnSuccess, card } from '../styles'
 import Spinner from './Spinner'
 
 const STATUS_STYLES: Record<FeedbackStatus, string> = {
@@ -65,7 +66,7 @@ export default function ReviewFeedbackCard({
   }
 
   return (
-    <section className="rounded-lg border border-slate-200 p-4">
+    <section className={card}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-slate-800">{label}</h2>
@@ -76,28 +77,18 @@ export default function ReviewFeedbackCard({
           </span>
         </div>
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setStatus('accepted')}
-            disabled={saving}
-            className="rounded-md border border-emerald-300 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-40"
-          >
+          <button type="button" onClick={() => setStatus('accepted')} disabled={saving} className={btnSuccess}>
             Accept
           </button>
           <button
             type="button"
             onClick={startEditing}
             disabled={saving}
-            className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+            className={`${btnSecondary} px-2.5 py-1 text-xs`}
           >
             Edit
           </button>
-          <button
-            type="button"
-            onClick={() => setStatus('rejected')}
-            disabled={saving}
-            className="rounded-md border border-red-300 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-40"
-          >
+          <button type="button" onClick={() => setStatus('rejected')} disabled={saving} className={btnDanger}>
             Reject
           </button>
         </div>
@@ -135,23 +126,23 @@ export default function ReviewFeedbackCard({
                 onChange={(e) => setDraft(e.target.value)}
                 disabled={saving}
                 rows={12}
-                className="w-full rounded-md border border-slate-300 px-2 py-1.5 font-mono text-xs focus:border-slate-500 focus:outline-none"
+                className="w-full rounded-md border border-slate-300 px-2 py-1.5 font-mono text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={handleSaveEdit}
                   disabled={saving}
-                  className="flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+                  className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {saving && <Spinner className="border-slate-500 border-t-white" />}
+                  {saving && <Spinner className="border-indigo-300 border-t-white" />}
                   {saving ? 'Saving…' : 'Save'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
                   disabled={saving}
-                  className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                  className={`${btnSecondary} px-3 py-1 text-xs`}
                 >
                   Cancel
                 </button>
